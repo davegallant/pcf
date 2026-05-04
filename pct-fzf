@@ -1,0 +1,41 @@
+#!/usr/bin/env bash
+# pct-fzf — fuzzy finder for Proxmox LXC containers
+
+set -euo pipefail
+
+die()  { echo "error: $*" >&2; exit 1; }
+command -v fzf &>/dev/null || die "fzf not found"
+command -v pct  &>/dev/null || die "pct not found"
+
+if [[ "${1:-}" == "--preview" ]]; then
+  pct config "$2" 2>/dev/null
+  echo "---"
+  pct status "$2" 2>/dev/null
+  exit 0
+fi
+
+chosen=$(pct list | fzf \
+  --header-lines=1 \
+  --prompt="ct > " \
+  --border=rounded \
+  --preview="$0 --preview {1}" \
+  --preview-window="right:45%:wrap"
+) || exit 0
+
+vmid=$(awk '{print $1}' <<< "$chosen")
+
+action=$(printf 'enter\nexec\nstart\nstop\nrestart\nstatus\ninfo\nlog\nedit\nsnapshot' \
+  | fzf --prompt="action > " --height=~40% --border=rounded) || exit 0
+
+case "$action" in
+  enter)    pct enter "$vmid" ;;
+  exec)     read -rp "cmd: " c; pct exec "$vmid" -- bash -c "$c" ;;
+  start)    pct start "$vmid" ;;
+  stop)     pct shutdown "$vmid" ;;
+  restart)  pct reboot "$vmid" ;;
+  status)   pct status "$vmid" ;;
+  info)     pct config "$vmid" ;;
+  log)      journalctl -u "pve-container@${vmid}" -n 80 -f ;;
+  edit)     "${EDITOR:-vi}" "/etc/pve/lxc/${vmid}.conf" ;;
+  snapshot) read -rp "name: " s; pct snapshot "$vmid" "$s" ;;
+esac
