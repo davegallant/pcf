@@ -1,6 +1,6 @@
 # pcf
 
-pcf (proxmox container fuzzy) is a fuzzy finder for Proxmox LXC containers. It wraps the pct command, simplifying management of your proxmox lxc containers.
+pcf (proxmox container fuzzy) is a fuzzy finder for Proxmox LXC containers. It wraps the pct executable on proxmox, simplifying management of  proxmox lxc containers.
 
 ## Dependencies
 
