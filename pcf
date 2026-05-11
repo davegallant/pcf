@@ -1,26 +1,37 @@
 #!/usr/bin/env bash
 # pcf — fuzzy finder for Proxmox LXC containers
 set -euo pipefail
+
+CACHE="/tmp/pcf-list.cache"
+CACHE_TTL=3600
+
 die() {
   echo "error: $*" >&2
   exit 1
 }
 command -v fzf &>/dev/null || die "fzf not found"
-command -v pct &>/dev/null || die "pct not found"
+command -v pct  &>/dev/null || die "pct not found"
+
 if [[ "${1:-}" == "--preview" ]]; then
   pct config "$2" 2>/dev/null
   echo "---"
   pct status "$2" 2>/dev/null
   exit 0
 fi
+
+if [[ ! -f "$CACHE" ]] || [[ $(( $(date +%s) - $(stat -c %Y "$CACHE") )) -gt $CACHE_TTL ]]; then
+  pct list > "$CACHE"
+fi
+
 chosen=$(
-  pct list | fzf \
+  cat "$CACHE" | fzf \
     --header-lines=1 \
     --prompt="ct > " \
     --border=rounded \
     --preview="$0 --preview {1}" \
     --preview-window="right:45%:wrap"
 ) || exit 0
+
 vmid=$(awk '{print $1}' <<<"$chosen")
 name=$(awk '{print $NF}' <<<"$chosen")
 action="${1:-}"
