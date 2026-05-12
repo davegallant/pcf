@@ -62,6 +62,7 @@ reboot)
   ;;
 info) pct config "$vmid" ;;
 edit)
+  echo "editing $vmid ($name)..."
   "${EDITOR:-vi}" "/etc/pve/lxc/${vmid}.conf"
   PCF_VMID="$vmid" exec "$0"
   ;;
