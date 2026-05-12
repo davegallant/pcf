@@ -23,14 +23,18 @@ if [[ ! -f "$CACHE" ]] || [[ $(( $(date +%s) - $(stat -c %Y "$CACHE") )) -gt $CA
   pct list > "$CACHE"
 fi
 
-chosen=$(
-  cat "$CACHE" | fzf \
-    --header-lines=1 \
-    --prompt="ct > " \
-    --border=rounded \
-    --preview="$0 --preview {1}" \
-    --preview-window="right:45%:wrap"
-) || exit 0
+if [[ -n "${PCF_VMID:-}" ]]; then
+  chosen=$(grep "^${PCF_VMID}\b" "$CACHE")
+else
+  chosen=$(
+    cat "$CACHE" | fzf \
+      --header-lines=1 \
+      --prompt="ct > " \
+      --border=rounded \
+      --preview="$0 --preview {1}" \
+      --preview-window="right:45%:wrap"
+  ) || exit 0
+fi
 
 vmid=$(awk '{print $1}' <<<"$chosen")
 name=$(awk '{print $NF}' <<<"$chosen")
@@ -57,7 +61,10 @@ reboot)
   pct reboot "$vmid"
   ;;
 info) pct config "$vmid" ;;
-edit) "${EDITOR:-vi}" "/etc/pve/lxc/${vmid}.conf" ;;
+edit)
+  "${EDITOR:-vi}" "/etc/pve/lxc/${vmid}.conf"
+  PCF_VMID="$vmid" exec "$0"
+  ;;
 snapshot)
   read -rp "name: " s
   echo "snapshotting $vmid ($name)..."
