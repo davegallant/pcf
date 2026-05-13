@@ -51,6 +51,7 @@ enter)
 start)
   echo "starting $vmid ($name)..."
   pct start "$vmid"
+  PCF_VMID="$vmid" exec "$0"
   ;;
 stop)
   echo "stopping $vmid ($name)..."
@@ -59,6 +60,7 @@ stop)
 reboot)
   echo "rebooting $vmid ($name)..."
   pct reboot "$vmid"
+  PCF_VMID="$vmid" exec "$0"
   ;;
 info) pct config "$vmid" ;;
 edit)
